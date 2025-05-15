@@ -9,19 +9,21 @@ import { useToast } from "@/components/ui/use-toast"
 import { PRODUCTS } from "@/lib/data/products"
 import { ArrowLeft, Minus, Plus, ShoppingCart } from "lucide-react"
 import Link from "next/link"
+import { useParams } from "next/navigation"
 
-export default function ProductDetailPage({ params }) {
-  const { id } = params
+export default function ProductDetailPage() {
+  const params = useParams()
+  const id = params.id
+
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
   const [adding, setAdding] = useState(false)
   const { toast } = useToast()
-
-  // Ajouter un état pour suivre si le produit a été ajouté au panier
   const [addedToCart, setAddedToCart] = useState(false)
 
   useEffect(() => {
+    setLoading(true)
     // Simuler un chargement de produit
     const timer = setTimeout(() => {
       const foundProduct = PRODUCTS.find((p) => p.id === id)
@@ -40,17 +42,12 @@ export default function ProductDetailPage({ params }) {
       // Simuler un délai d'ajout au panier
       await new Promise((resolve) => setTimeout(resolve, 500))
 
-      // Ajouter au panier en utilisant localStorage
       const cartItems = JSON.parse(localStorage.getItem("cart") || "[]")
-
-      // Vérifier si le produit est déjà dans le panier
       const existingItemIndex = cartItems.findIndex((item) => item.productId === product.id)
 
       if (existingItemIndex >= 0) {
-        // Incrémenter la quantité si le produit existe déjà
         cartItems[existingItemIndex].quantity += quantity
       } else {
-        // Ajouter le nouveau produit au panier
         cartItems.push({
           productId: product.id,
           name: product.name,
@@ -60,10 +57,7 @@ export default function ProductDetailPage({ params }) {
         })
       }
 
-      // Sauvegarder le panier mis à jour
       localStorage.setItem("cart", JSON.stringify(cartItems))
-
-      // Déclencher un événement personnalisé pour mettre à jour le compteur du panier
       window.dispatchEvent(new Event("cartUpdated"))
 
       toast({

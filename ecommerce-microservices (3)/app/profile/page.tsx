@@ -7,14 +7,30 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { fetchWithAuth } from "@/lib/api"
+import { getCurrentUser, updateUserProfile } from "@/lib/api"
 import { isAuthenticated } from "@/lib/auth"
+
+interface UserAddress {
+  street?: string
+  city?: string
+  postalCode?: string
+  country?: string
+}
+
+interface User {
+  firstName: string
+  lastName: string
+  email: string
+  address?: UserAddress
+}
 
 export default function ProfilePage() {
   const router = useRouter()
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -26,25 +42,16 @@ export default function ProfilePage() {
   })
 
   useEffect(() => {
-    // Vérifier si l'utilisateur est connecté
     if (!isAuthenticated()) {
       router.push("/login")
       return
     }
 
-    // Charger les données de l'utilisateur
     const loadUserData = async () => {
       try {
-        const response = await fetchWithAuth("/api/auth/me")
-
-        if (!response.ok) {
-          throw new Error("Échec de la récupération des données utilisateur")
-        }
-
-        const userData = await response.json()
+        const userData = await getCurrentUser()
         setUser(userData)
 
-        // Préremplir le formulaire
         setFormData({
           firstName: userData.firstName || "",
           lastName: userData.lastName || "",
@@ -54,8 +61,8 @@ export default function ProfilePage() {
           postalCode: userData.address?.postalCode || "",
           country: userData.address?.country || "",
         })
-      } catch (error) {
-        console.error("Erreur:", error)
+      } catch (err: any) {
+        setError(err.message || "Erreur inconnue")
       } finally {
         setLoading(false)
       }
@@ -64,7 +71,7 @@ export default function ProfilePage() {
     loadUserData()
   }, [router])
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
@@ -72,43 +79,35 @@ export default function ProfilePage() {
     }))
   }
 
-  const handleProfileUpdate = async (e) => {
+  const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     setUpdating(true)
+    setError(null)
 
     try {
-      const response = await fetchWithAuth("/api/auth/update-profile", {
-        method: "PUT",
-        body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          address: {
-            street: formData.street,
-            city: formData.city,
-            postalCode: formData.postalCode,
-            country: formData.country,
-          },
-        }),
+      const updatedUser = await updateUserProfile({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        address: {
+          street: formData.street,
+          city: formData.city,
+          postalCode: formData.postalCode,
+          country: formData.country,
+        },
       })
 
-      if (!response.ok) {
-        throw new Error("Échec de la mise à jour du profil")
-      }
-
-      const updatedUser = await response.json()
       setUser(updatedUser)
       alert("Profil mis à jour avec succès")
-    } catch (error) {
-      console.error("Erreur:", error)
-      alert("Erreur lors de la mise à jour du profil")
+    } catch (err: any) {
+      setError(err.message || "Erreur lors de la mise à jour")
     } finally {
       setUpdating(false)
     }
   }
 
-  const handlePasswordChange = async (e) => {
+  const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Implémentation du changement de mot de passe
+    alert("Fonction changement de mot de passe à implémenter")
   }
 
   if (loading) {
@@ -122,6 +121,8 @@ export default function ProfilePage() {
   return (
     <div className="container max-w-4xl py-10">
       <h1 className="text-3xl font-bold mb-6">Mon Profil</h1>
+
+      {error && <div className="mb-4 text-red-600">{error}</div>}
 
       <Tabs defaultValue="profile">
         <TabsList className="mb-6">
@@ -234,7 +235,7 @@ export default function ProfilePage() {
               <CardDescription>Consultez l'historique de vos commandes.</CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Ici, vous afficheriez les commandes de l'utilisateur */}
+              {/* Affichage des commandes à implémenter */}
               <p className="text-center py-10 text-muted-foreground">Vous n'avez pas encore passé de commande.</p>
             </CardContent>
           </Card>

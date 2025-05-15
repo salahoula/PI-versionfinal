@@ -57,9 +57,7 @@ export default function Header() {
             <Link href="/products" className="hover:text-primary">
               Produits
             </Link>
-            <Link href="/categories" className="hover:text-primary">
-              Catégories
-            </Link>
+            
             <Link href="/history" className="hover:text-primary">
               Historique
             </Link>

@@ -20,11 +20,9 @@ export default function CartPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
-    // Vérifier si l'utilisateur est connecté
     const userLoggedIn = isAuthenticated()
     setIsLoggedIn(userLoggedIn)
 
-    // Charger le panier depuis localStorage, qu'il soit connecté ou non
     const loadCart = () => {
       try {
         const cartItems = JSON.parse(localStorage.getItem("cart") || "[]")
@@ -42,16 +40,14 @@ export default function CartPage() {
 
   const updateQuantity = async (productId, quantity) => {
     if (quantity < 1) return
-
     setUpdating(true)
     try {
-      // Mettre à jour le panier dans localStorage
       const cartItems = JSON.parse(localStorage.getItem("cart") || "[]")
-      const updatedItems = cartItems.map((item) => (item.productId === productId ? { ...item, quantity } : item))
-
+      const updatedItems = cartItems.map((item) =>
+        item.productId === productId ? { ...item, quantity } : item
+      )
       localStorage.setItem("cart", JSON.stringify(updatedItems))
       setCart({ items: updatedItems })
-
       toast({
         title: "Panier mis à jour",
         description: "La quantité a été mise à jour avec succès.",
@@ -71,13 +67,10 @@ export default function CartPage() {
   const removeItem = async (productId) => {
     setUpdating(true)
     try {
-      // Supprimer l'article du panier dans localStorage
       const cartItems = JSON.parse(localStorage.getItem("cart") || "[]")
       const updatedItems = cartItems.filter((item) => item.productId !== productId)
-
       localStorage.setItem("cart", JSON.stringify(updatedItems))
       setCart({ items: updatedItems })
-
       toast({
         title: "Produit retiré",
         description: "Le produit a été retiré de votre panier.",
@@ -95,7 +88,11 @@ export default function CartPage() {
   }
 
   const calculateTotal = () => {
-    return cart.items.reduce((total, item) => total + item.price * item.quantity, 0)
+    return cart.items.reduce((total, item) => {
+      const price = Number(item.price) || 0
+      const quantity = Number(item.quantity) || 1
+      return total + price * quantity
+    }, 0)
   }
 
   const handleCheckout = () => {
@@ -108,7 +105,6 @@ export default function CartPage() {
       return
     }
 
-    // Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
     if (!isLoggedIn) {
       toast({
         title: "Connexion requise",
@@ -160,57 +156,61 @@ export default function CartPage() {
               <CardTitle>Articles ({cart.items.length})</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {cart.items.map((item) => (
-                <div key={item.productId} className="flex gap-4 border-b pb-4 last:border-0 last:pb-0">
-                  <div className="w-20 h-20 relative flex-shrink-0">
-                    <Image
-                      src={item.image || "/placeholder.svg"}
-                      alt={item.name}
-                      fill
-                      className="object-cover rounded-md"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <Link href={`/products/${item.productId}`} className="font-medium hover:text-primary">
-                      {item.name}
-                    </Link>
-                    <p className="text-sm text-muted-foreground mb-2">{item.price.toFixed(2)} €</p>
-                    <div className="flex items-center gap-2">
+              {cart.items.map((item) => {
+                const price = Number(item.price) || 0
+                const quantity = Number(item.quantity) || 1
+                return (
+                  <div key={item.productId} className="flex gap-4 border-b pb-4 last:border-0 last:pb-0">
+                    <div className="w-20 h-20 relative flex-shrink-0">
+                      <Image
+                        src={item.image || "/placeholder.svg"}
+                        alt={item.name}
+                        fill
+                        className="object-cover rounded-md"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Link href={`/products/${item.productId}`} className="font-medium hover:text-primary">
+                        {item.name}
+                      </Link>
+                      <p className="text-sm text-muted-foreground mb-2">{price.toFixed(2)} €</p>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => updateQuantity(item.productId, quantity - 1)}
+                          disabled={updating || quantity <= 1}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <span className="w-8 text-center">{quantity}</span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => updateQuantity(item.productId, quantity + 1)}
+                          disabled={updating}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="text-right flex flex-col justify-between">
+                      <span className="font-medium">{(price * quantity).toFixed(2)} €</span>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
-                        onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                        disabled={updating || item.quantity <= 1}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="w-8 text-center">{item.quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                        className="h-8 w-8 text-destructive self-end"
+                        onClick={() => removeItem(item.productId)}
                         disabled={updating}
                       >
-                        <Plus className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                  <div className="text-right flex flex-col justify-between">
-                    <span className="font-medium">{(item.price * item.quantity).toFixed(2)} €</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive self-end"
-                      onClick={() => removeItem(item.productId)}
-                      disabled={updating}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </CardContent>
           </Card>
         </div>
@@ -259,7 +259,6 @@ export default function CartPage() {
             </CardFooter>
           </Card>
 
-          {/* Ajout d'une carte d'information pour le processus de commande */}
           <Card className="mt-4">
             <CardContent className="pt-4">
               <h3 className="font-medium mb-2">Comment commander ?</h3>
@@ -294,7 +293,6 @@ export default function CartPage() {
         </div>
       </div>
 
-      {/* Bouton de commande en bas pour mobile */}
       <div className="mt-6 md:hidden">
         <Button className="w-full" size="lg" onClick={handleCheckout}>
           {!isLoggedIn ? (

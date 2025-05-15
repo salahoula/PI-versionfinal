@@ -20,11 +20,7 @@ export default function Footer() {
                   Produits
                 </Link>
               </li>
-              <li>
-                <Link href="/categories" className="hover:text-primary">
-                  Catégories
-                </Link>
-              </li>
+              
               <li>
                 <Link href="/promotions" className="hover:text-primary">
                   Promotions

@@ -1,3 +1,4 @@
+// auth.ts
 // Ce fichier contient les fonctions pour interagir avec le service d'authentification
 
 export async function login(email: string, password: string) {
@@ -17,7 +18,9 @@ export async function login(email: string, password: string) {
     const data = await response.json()
 
     // Stocker le token JWT dans localStorage
-    localStorage.setItem("token", data.token)
+    if (typeof window !== "undefined") {
+      localStorage.setItem("token", data.token)
+    }
 
     return data
   } catch (error) {
@@ -55,18 +58,20 @@ export async function register(userData: {
 
 export async function logout() {
   // Supprimer le token JWT du localStorage
-  localStorage.removeItem("token")
-}
-
-export function getAuthToken() {
-  // Récupérer le token JWT du localStorage
   if (typeof window !== "undefined") {
-    return localStorage.getItem("token")
+    localStorage.removeItem("token")
   }
-  return null
 }
 
-export function isAuthenticated() {
+export function getAuthToken(): string | null {
+  // Récupérer le token JWT du localStorage
+  if (typeof window === "undefined") return null
+  return localStorage.getItem("token")
+}
+
+export function isAuthenticated(): boolean {
   // Vérifier si l'utilisateur est authentifié
-  return !!getAuthToken()
+  if (typeof window === "undefined") return false
+  const token = localStorage.getItem("token")
+  return Boolean(token)
 }
